@@ -176,18 +176,19 @@ async def run(config: Config) -> None:
 _DEVICE_ID_URL_PATTERN = re.compile(r"(/device/)[^/\s\"']+")
 
 
-def _scrub_event(event: dict, hint: dict) -> dict:
-    """例外メッセージ中の URL に含まれる device_id をマスクする。
+def _scrub_device_id(value: str) -> str:
+    return _DEVICE_ID_URL_PATTERN.sub(r"\1<redacted>", value)
 
-    push-image 失敗時に capture する requests 例外のメッセージ文字列は
-    リクエスト URL(device_id を含む)をそのまま含むことがあるため、
-    include_local_variables=False と同じ意図で、送信前に URL 中の
-    device_id セグメントを除去する。
-    """
+
+def _scrub_event(event: dict, hint: dict) -> dict:
+    """Sentry イベント内のメッセージに含まれる device_id をマスクする。"""
     for exc in event.get("exception", {}).get("values", []) or []:
         value = exc.get("value")
         if value:
-            exc["value"] = _DEVICE_ID_URL_PATTERN.sub(r"\1<redacted>", value)
+            exc["value"] = _scrub_device_id(value)
+    message = event.get("logentry", {}).get("message")
+    if message:
+        event["logentry"]["message"] = _scrub_device_id(message)
     return event
 
 
@@ -199,7 +200,10 @@ def _scrub_breadcrumb(crumb: dict, hint: dict) -> dict:
     """
     message = crumb.get("message")
     if message is not None:
-        crumb["message"] = message[:200]
+        crumb["message"] = _scrub_device_id(message[:200])
+    url = crumb.get("data", {}).get("url")
+    if url:
+        crumb["data"]["url"] = _scrub_device_id(url)
     return crumb
 
 
