@@ -369,6 +369,44 @@ def test_scrub_event_masks_device_id_in_exception_message():
     assert "/device/<redacted>" in scrubbed_value
 
 
+def test_scrub_event_masks_device_id_in_logentry_message():
+    event = {
+        "logentry": {
+            "message": (
+                "Request failed for /authV2/open/device/"
+                "synthetic-secret-device/image"
+            )
+        }
+    }
+
+    result = main._scrub_event(event, {})
+
+    assert "synthetic-secret-device" not in result["logentry"]["message"]
+    assert "/device/<redacted>" in result["logentry"]["message"]
+
+
+def test_scrub_breadcrumb_masks_device_id_in_message_and_url():
+    crumb = {
+        "message": (
+            "Request failed for /authV2/open/device/"
+            "synthetic-secret-device/image"
+        ),
+        "data": {
+            "url": (
+                "https://api.example/authV2/open/device/"
+                "synthetic-secret-device/image"
+            )
+        },
+    }
+
+    result = main._scrub_breadcrumb(crumb, {})
+
+    assert "synthetic-secret-device" not in result["message"]
+    assert "/device/<redacted>" in result["message"]
+    assert "synthetic-secret-device" not in result["data"]["url"]
+    assert "/device/<redacted>" in result["data"]["url"]
+
+
 def test_scrub_event_ignores_events_without_exception():
     """exception フィールドを持たないイベントでもエラーにならない。"""
     event = {"message": "no exception here"}
