@@ -39,5 +39,5 @@ docker compose up --build -d   # .env に DOT_APP_API_TOKEN と DOT_DEVICE_ID �
 - 画面更新は `MIN_PUSH_INTERVAL_SEC` 未満の間隔では行わない。現在の表示と同一画像なら push をスキップする。
 - push の同期 HTTP 処理は `asyncio.to_thread` 経由で呼び、イベントループをブロックしない。
 - WebSocket は正常終了時も含めて必ずバックオフを挟んで再接続する(P2P地震情報は IP あたりの同時接続数が制限されている)。プロセスは終了させない。
-- Sentry へ送る情報から API トークンや device_id を除く(`include_local_variables=False`、`_scrub_event`、`_scrub_breadcrumb`)。秘密情報をログに出力しない。
+- Sentry へ送る情報から API トークンや device_id を除く(`data_collection={"stack_frame_variables": False}`、`_scrub_event`、`_scrub_breadcrumb`)。秘密情報をログに出力しない。
 - 描画に使う日本語フォントは Dockerfile で導入する `fonts-ipafont-gothic` に依存する。
