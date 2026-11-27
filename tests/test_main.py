@@ -194,7 +194,23 @@ def test_main_inits_sentry_with_local_variables_disabled(monkeypatch):
 
     main.main()
 
-    assert captured["include_local_variables"] is False
+    assert captured["data_collection"] == {"stack_frame_variables": False}
+
+
+def test_main_sentry_init_accepted_by_real_sdk(monkeypatch):
+    """実際の sentry_sdk.init が main() の渡すオプションを受理し、ローカル変数を収集しない。"""
+    monkeypatch.setenv("SENTRY_DSN", "https://example@glitchtip.example/1")
+    monkeypatch.setenv("DOT_APP_API_TOKEN", "dummy-token")
+    monkeypatch.setenv("DOT_DEVICE_ID", "dummy-device-id")
+    monkeypatch.setattr(main.asyncio, "run", lambda coro: None)
+
+    try:
+        main.main()
+        options = main.sentry_sdk.get_client().options
+        assert options["data_collection"]["stack_frame_variables"] is False
+    finally:
+        main.sentry_sdk.get_client().close()
+        main.sentry_sdk.get_global_scope().set_client(None)
 
 
 def test_scrub_breadcrumb_truncates_long_message():

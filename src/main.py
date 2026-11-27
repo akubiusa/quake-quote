@@ -247,7 +247,7 @@ def main() -> None:
         sentry_sdk.init(
             dsn=sentry_dsn,
             # スタックフレームのローカル変数(APIトークン等)を外部送信しない
-            include_local_variables=False,
+            data_collection={"stack_frame_variables": False},
             before_send=_scrub_event,
             before_breadcrumb=_scrub_breadcrumb,
             integrations=[
